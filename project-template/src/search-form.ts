@@ -1,6 +1,13 @@
 import { renderBlock } from './lib.js'
 
-export function renderSearchFormBlock () {
+const date = new Date();
+const tomorrow = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+const date2 = new Date(date.getTime() + 2 * 24 * 60 * 60 * 1000);
+const lastDate = new Date(date.getTime() + 60 * 24 * 60 * 60 * 1000);
+
+export function renderSearchFormBlock() {
+  // <input id="check-out-date" type="date" value="2021-05-13" min="2021-05-11" max="2021-06-30" name="checkout" />
+
   renderBlock(
     'search-form-block',
     `
@@ -20,11 +27,17 @@ export function renderSearchFormBlock () {
         <div class="row">
           <div>
             <label for="check-in-date">Дата заезда</label>
-            <input id="check-in-date" type="date" value="2021-05-11" min="2021-05-11" max="2021-06-30" name="checkin" />
+            <input id="check-in-date" type="date"
+            value="${tomorrow.getFullYear()}-0${tomorrow.getMonth() + 1}-${tomorrow.getDate()}"
+            min="${tomorrow.getFullYear()}-0${tomorrow.getMonth() + 1}-${tomorrow.getDate() + 1}" 
+            max="${lastDate.getFullYear()}-0${lastDate.getMonth() + 1}-${lastDate.getDate()}" name="checkin" />
           </div>
           <div>
             <label for="check-out-date">Дата выезда</label>
-            <input id="check-out-date" type="date" value="2021-05-13" min="2021-05-11" max="2021-06-30" name="checkout" />
+            <input id="check-out-date" type="date"
+            value="${date2.getFullYear()}-0${date2.getMonth() + 1}-${date2.getDate()}"
+            min="${date2.getFullYear()}-0${date2.getMonth() + 1}-${date2.getDate()}"
+            max="${lastDate.getFullYear()}-0${lastDate.getMonth() + 1}-${lastDate.getDate()}" name="checkout" />
           </div>
           <div>
             <label for="max-price">Макс. цена суток</label>
