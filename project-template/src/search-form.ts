@@ -6,7 +6,6 @@ const date2 = new Date(date.getTime() + 2 * 24 * 60 * 60 * 1000);
 const lastDate = new Date(date.getTime() + 60 * 24 * 60 * 60 * 1000);
 
 export function renderSearchFormBlock() {
-  // <input id="check-out-date" type="date" value="2021-05-13" min="2021-05-11" max="2021-06-30" name="checkout" />
 
   renderBlock(
     'search-form-block',
