@@ -1,20 +1,23 @@
 import { renderBlock } from './lib.js'
 
-localStorage.user = JSON.stringify({
-  userName: 'Wade Warren',
-  avatarUrl: '/img/avatar.png'
-})
 localStorage.favoritesAmount = JSON.stringify({
   favoriteItemsAmount: 3
 })
 
-export function getUserData(user: unknown) {
-  console.log(JSON.parse(localStorage.getItem('user')))
-}
-export function getFavoritesAmount(favoritesAmount: unknown) {
-  console.log(JSON.parse(localStorage.getItem('favoritesAmount')))
+export function getUserData(username: unknown, avatarurl: unknown) {
+
+localStorage.user = JSON.stringify({
+  userName: username,
+  avatarUrl: avatarurl
+})
+let user = {};
+return user = JSON.parse(localStorage.getItem('user'));
 }
 
+export function getFavoritesAmount() {
+  const favoritesAmount = JSON.parse(localStorage.getItem('favoritesAmount'));
+}
+getUserData('Wade Warren', '/img/avatar.png')
 
 export function renderUserBlock(userName: string, avatarUrl: string, favoriteItemsAmount?: number) {
   const favoritesCaption = (favoriteItemsAmount >= 1) ? favoriteItemsAmount : 'ничего нет'
