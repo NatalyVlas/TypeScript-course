@@ -1,25 +1,40 @@
 import { renderBlock } from './lib.js'
+import { FavouritePlace } from "./search-results.js";
 
-localStorage.favoritesAmount = JSON.stringify({
-  favoriteItemsAmount: 3
-})
+export class User {
+  public userName: string;
+  public avatarUrl: string;
 
-export function getUserData(username: unknown, avatarurl: unknown) {
-
-localStorage.user = JSON.stringify({
-  userName: username,
-  avatarUrl: avatarurl
-})
-let user = {};
-return user = JSON.parse(localStorage.getItem('user'));
+  constructor(userName: string, avatarUrl: string) {
+    this.userName = userName;
+    this.avatarUrl = avatarUrl;
+  }
 }
 
-export function getFavoritesAmount() {
-  const favoritesAmount = JSON.parse(localStorage.getItem('favoritesAmount'));
+export function getUserData(): User {
+  const user: unknown = JSON.parse(localStorage.getItem("user"));
+  if (user === null) {
+    console.log("Data not found");
+    return null;
+  }
+  if (user instanceof User) {
+    return user;
+  } else {
+    return null;
+  }
 }
-getUserData('Wade Warren', '/img/avatar.png')
 
-export function renderUserBlock(userName: string, avatarUrl: string, favoriteItemsAmount?: number) {
+export function getFavoritesAmount(): number {
+  const favoriteItems: FavouritePlace[] = JSON.parse(localStorage.getItem("favoriteItems"));
+  if (favoriteItems?.length === 0) {
+    console.log("Data not found");
+    return null;
+  }
+  return favoriteItems?.length;
+}
+
+
+export function renderUserBlock(user: User, favoriteItemsAmount?: number): void {
   const favoritesCaption = (favoriteItemsAmount >= 1) ? favoriteItemsAmount : 'ничего нет'
   const hasFavoriteItems = (favoriteItemsAmount >= 1) ? true : false
 
@@ -27,9 +42,9 @@ export function renderUserBlock(userName: string, avatarUrl: string, favoriteIte
     'user-block',
     `
     <div class="header-container">
-      <img class="avatar" src="${avatarUrl}" alt="Wade Warren" />
+      <img class="avatar" src="${user?.avatarUrl}" alt=avatar" />
       <div class="info">
-          <p class="name">${userName}</p>
+          <p class="name">${user?.userName}</p>
           <p class="fav">
             <i class="heart-icon${hasFavoriteItems ? ' active' : ''}"></i>${favoritesCaption}
           </p>

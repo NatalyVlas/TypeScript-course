@@ -1,9 +1,24 @@
-export function renderBlock(elementId, html) {
+interface toastMessage {
+  text: string;
+  type: string;
+}
+
+interface toastAction {
+  name: string;
+  handler: () => void;
+}
+
+
+export const placesCoordinates = new Map<string, string>();
+
+placesCoordinates.set("Санкт-Петербург", "59.9386,30.3141");
+
+export function renderBlock(elementId: string, html: string) {
   const element = document.getElementById(elementId)
   element.innerHTML = html
 }
 
-export function renderToast(message, action?) {
+export function renderToast(message: toastMessage, action?: toastAction): void {
   let messageText = ''
 
   if (message != null) {

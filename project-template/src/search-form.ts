@@ -1,29 +1,101 @@
-import { renderBlock } from './lib.js'
+import { placesCoordinates, renderBlock, renderToast } from "./lib.js";
+import { renderSearchResultsBlock } from "./search-results.js";
 
-export function renderSearchFormBlock(checkinDate: Date, checkoutDate: Date) {
-  const today = new Date();
+export interface SearchFormData {
+  city: string;
+  startDate: number;
+  endDate: number;
+  maxPrice: number;
+}
 
-  function checkDate(firstDate: Date, secondDate: Date): Date {
-    if (new Date(secondDate).getTime() >= firstDate.getTime()) {
-      return secondDate;
+export interface Place {
+  bookedDates: unknown[];
+  description: string;
+  id: number;
+  image: string;
+  name: string;
+  price: number;
+  remoteness: number;
+}
+
+interface PlaceCallback {
+  (error?: Error, result?: Place[]): void;
+}
+
+export const callback: PlaceCallback = (error, result) => {
+  if (error === null && result !== null) {
+    renderSearchResultsBlock(result);
+  } else {
+    renderToast({ type: "error", text: "Повторите поиск" });
+  }
+};
+
+export async function search(
+  searchParams: SearchFormData,
+  callback: PlaceCallback
+): Promise<void> {
+  const f = await fetch(
+    `http://127.0.0.1:3030/places?coordinates=${placesCoordinates.get(
+      searchParams.city
+    )}&checkInDate=${searchParams.startDate}&checkOutDate=${
+      searchParams.endDate
+    }&maxPrice=${+searchParams.maxPrice}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json;charset=utf-8",
+      },
     }
-    return firstDate;
-  }
+  );
+  const d = await f.json();
 
-  function addDays(date: Date, amount: number): Date {
-    const newDate = new Date(date.getTime())
-    newDate.setDate(newDate.getDate() + amount);
-    return newDate;
-  }
+  setTimeout(() => {
+    if (Math.random() > 0.5) {
+      callback(null, d);
+      setTimeout(() => {
+        renderToast(
+          { text: "Поиск устарел. Повторите поиск", type: "error" },
+          {
+            name: "Повторить поиск",
+            handler: () => {
+              search(collectSearchParams(), callback);
+            },
+          }
+        );
+      }, 20000);
+    } else {
+      callback(new Error("My Error"));
+    }
+  }, 500);
+}
 
-  function dateStr(date: Date): string {
-    return date.toISOString().substring(0, 10);
-  }
+export function collectSearchParams(): SearchFormData {
+  return {
+    city: (document.getElementById("city") as HTMLTextAreaElement).value,
+    startDate: +new Date(
+      (document.getElementById("check-in-date") as HTMLTextAreaElement).value
+    ),
+    endDate: +new Date(
+      (document.getElementById("check-out-date") as HTMLTextAreaElement).value
+    ),
+    maxPrice: +(document.getElementById("max-price") as HTMLTextAreaElement)
+      .value,
+  };
+}
 
-  const curCheckInDate = checkinDate ? checkDate(today, checkinDate) : addDays(today, 1);
-  const curCheckOutDate = checkoutDate ? checkDate(checkinDate, checkoutDate) : addDays(curCheckInDate, 3);
-  const minDate = dateStr(today);
-  const maxDate = dateStr(new Date(today.getFullYear(), today.getMonth() + 2, 1));
+export function renderSearchFormBlock(startDate?: string, endDate?: string): void {
+  const minDate = new Date().toISOString().slice(0, 10);
+
+  const today = new Date();
+  const month = new Date().getMonth() === 12 ? 1 : new Date().getMonth() + 1;
+  const nextMonthLastDay = new Date(today.getFullYear(), month + 1, 0);
+  const maxDate = nextMonthLastDay.toISOString().slice(0, 10);
+
+  const tempDate = new Date();
+  tempDate.setDate(today.getDate() + 1);
+  startDate = tempDate.toISOString().slice(0, 10);
+  tempDate.setDate(tempDate.getDate() + 2);
+  endDate = tempDate.toISOString().slice(0, 10);
 
 
   renderBlock(
@@ -46,7 +118,7 @@ export function renderSearchFormBlock(checkinDate: Date, checkoutDate: Date) {
           <div>
             <label for="check-in-date">Дата заезда</label>
             <input id="check-in-date" type="date"
-            value="${dateStr(curCheckInDate)}"
+            value="${startDate}"
             min="${minDate}" 
             max="${maxDate}"
             name="checkin" />
@@ -54,7 +126,7 @@ export function renderSearchFormBlock(checkinDate: Date, checkoutDate: Date) {
           <div>
             <label for="check-out-date">Дата выезда</label>
             <input id="check-out-date" type="date"
-            value="${dateStr(curCheckOutDate)}"
+            value="${endDate}"
             min="${minDate}"
             max="${maxDate}"
             name="checkout" />
