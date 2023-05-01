@@ -1,5 +1,6 @@
 import { placesCoordinates, renderBlock, renderToast } from "./lib.js";
-import { renderSearchResultsBlock } from "./search-results.js";
+import { Provider, renderSearchResultsBlock } from "./search-results.js";
+import { FlatRentFlat, FlatRentParameters, FlatRentSdk } from "./libraries/flat-rent-sdk/flat-rent-sdk.js";
 
 export interface SearchFormData {
   city: string;
@@ -15,11 +16,19 @@ export interface Place {
   image: string;
   name: string;
   price: number;
-  remoteness: number;
+  remoteness?: number;
+  provider: Provider;
 }
 
 interface PlaceCallback {
   (error?: Error, result?: Place[]): void;
+}
+
+interface requestParameters {
+  coordinates: string;
+  checkinDate: number;
+  checkoutDate: number;
+  maxPrice: number;
 }
 
 export const callback: PlaceCallback = (error, result) => {
@@ -30,10 +39,63 @@ export const callback: PlaceCallback = (error, result) => {
   }
 };
 
+
 export async function search(
   searchParams: SearchFormData,
   callback: PlaceCallback
 ): Promise<void> {
+  const homyResult = await searchHomy(searchParams);
+  const flatRentResult = await searchFlatRent(searchParams);
+  const results = [...homyResult, ...flatRentResult];
+  setTimeout(() => {
+    if (Math.random() > 0.5) {
+      callback(null, results);
+      setTimeout(() => {
+        renderToast(
+          { text: "Поиск устарел. Повторите поиск", type: "error" },
+          {
+            name: "Повторить поиск",
+            handler: () => {
+              search(collectSearchParams(), callback);
+            },
+          }
+        );
+      }, 300000);
+    } else {
+      callback(new Error("My Error"));
+    }
+  }, 500);
+}
+
+export async function searchFlatRent(
+  searchParams: SearchFormData
+): Promise<Place[]> {
+  const newFlatRent = new FlatRentSdk();
+  const parameters: FlatRentParameters = {
+    city: searchParams.city,
+    checkInDate: new Date(searchParams.startDate),
+    checkOutDate: new Date(searchParams.endDate),
+    priceLimit: searchParams.maxPrice,
+  };
+
+  const searchResult = await newFlatRent.search(parameters);
+  const mappedResult: Place[] = searchResult.map((place) => {
+    return {
+      bookedDates: place.bookedDates,
+      description: place.details,
+      id: place.id,
+      image: place.photos[0],
+      name: place.title,
+      price: place.totalPrice,
+      provider: Provider.FlatRent,
+    };
+  });
+  return mappedResult;
+}
+
+export async function searchHomy(
+  searchParams: SearchFormData
+): Promise<Place[]> {
   const f = await fetch(
     `http://127.0.0.1:3030/places?coordinates=${placesCoordinates.get(
       searchParams.city
@@ -47,26 +109,11 @@ export async function search(
       },
     }
   );
-  const d = await f.json();
+  const searchResult = await f.json();
 
-  setTimeout(() => {
-    if (Math.random() > 0.5) {
-      callback(null, d);
-      setTimeout(() => {
-        renderToast(
-          { text: "Поиск устарел. Повторите поиск", type: "error" },
-          {
-            name: "Повторить поиск",
-            handler: () => {
-              search(collectSearchParams(), callback);
-            },
-          }
-        );
-      }, 20000);
-    } else {
-      callback(new Error("My Error"));
-    }
-  }, 500);
+  return searchResult.map((place) => {
+    return { ...place, provider: Provider.Homy };
+  });
 }
 
 export function collectSearchParams(): SearchFormData {

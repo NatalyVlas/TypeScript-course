@@ -1,5 +1,6 @@
-import { placesCoordinates, renderBlock, renderToast } from "./lib.js";
+import { renderBlock, renderToast } from "./lib.js";
 import { collectSearchParams, Place, SearchFormData } from "./search-form.js";
+import { FlatRentSdk } from "./libraries/flat-rent-sdk/flat-rent-sdk.js";
 
 export interface FavouritePlace {
   id: number;
@@ -7,7 +8,18 @@ export interface FavouritePlace {
   img: string;
 }
 
-export function renderSearchStubBlock () {
+export interface BookResult {
+  type: "success" | "error";
+  hotelName?: string;
+  checinDate?: Date;
+  checkoutDate?: Date;
+}
+
+export enum Provider {
+  Homy = "Homy",
+  FlatRent = "FlatRent",
+}
+export function renderSearchStubBlock (): void  {
   renderBlock(
     'search-results-block',
     `
@@ -19,7 +31,7 @@ export function renderSearchStubBlock () {
   )
 }
 
-export function renderEmptyOrErrorSearchBlock (reasonMessage) {
+export function renderEmptyOrErrorSearchBlock (reasonMessage: string): void {
   renderBlock(
     'search-results-block',
     `
@@ -73,10 +85,10 @@ export function toggleFavoriteItem(place: FavouritePlace): void {
   }
 }
 
-export async function bookPlace(
-  id: number,
+export async function bookPlaceHomy(
+  id: number | string,
   searchParams: SearchFormData
-): Promise<void> {
+): Promise<BookResult> {
   const f = await fetch(
     `http://127.0.0.1:3030/places/${id}?checkInDate=${searchParams.startDate}&checkOutDate=${searchParams.endDate}`,
     {
@@ -86,21 +98,69 @@ export async function bookPlace(
       },
     }
   );
-  const d = await f.json();
-  if (d.name === "BadRequest") {
-    renderToast({
-      type: "error",
-      text: "Данные даты не доступны для бронирования",
-    });
+  const bookResult = await f.json();
+
+  if (bookResult.name === "BadRequest") {
+    return { type: "error" };
   } else {
-    renderToast({
+    return {
       type: "success",
-      text: `Отель ${d.name} забронирован на даты с ${new Date(
-        d.bookedDates[0] / 1000
-      )} по ${new Date(d.bookedDates[d.bookedDates.length - 1] / 1000)}`,
-    });
+      checinDate: new Date(searchParams.startDate),
+      checkoutDate: new Date(searchParams.endDate),
+    };
   }
-  console.log(d);
+}
+
+export async function bookPlaceFlatRent(
+  id: number | string,
+  searchParams: SearchFormData
+): Promise<BookResult> {
+  const newFlatRent = new FlatRentSdk();
+  const bookResult = newFlatRent.book(
+    id,
+    new Date(searchParams.startDate),
+    new Date(searchParams.endDate)
+  );
+  if (!bookResult) {
+    return { type: "error" };
+  } else {
+    return {
+      type: "success",
+      checinDate: new Date(searchParams.startDate),
+      checkoutDate: new Date(searchParams.endDate),
+    };
+  }
+}
+
+export async function bookPlace(
+  id: number | string,
+  searchParams: SearchFormData,
+  provider: Provider
+): Promise<void> {
+  if (provider === Provider.FlatRent) {
+    const bookResult = await bookPlaceFlatRent(id, searchParams);
+    if (bookResult.type === "error") {
+      renderToast({ text: "Отель недоступен для бронирования", type: "error" });
+    }
+    if (bookResult.type === "success") {
+      renderToast({
+        text: `Отель успешно забронирован на даты с ${bookResult.checinDate} по ${bookResult.checkoutDate}`,
+        type: "success",
+      });
+    }
+  }
+  if (provider === Provider.Homy) {
+    const bookResult = await bookPlaceHomy(id, searchParams);
+    if (bookResult.type === "error") {
+      renderToast({ text: "Отель недоступен для бронирования", type: "error" });
+    }
+    if (bookResult.type === "success") {
+      renderToast({
+        text: `Отель успешно забронирован на даты с ${bookResult.checinDate} по ${bookResult.checkoutDate}`,
+        type: "success",
+      });
+    }
+  }
 }
 
 export function renderSearchResultsBlock (results: Place[]): void {
@@ -181,9 +241,10 @@ export function renderSearchResultsBlock (results: Place[]): void {
       console.log(e);
 
       if (e.target instanceof HTMLButtonElement) {
-        console.log("book");
-
-        bookPlace(+e.target.dataset.id, collectSearchParams());
+        bookPlace(e.target.dataset.id,
+          collectSearchParams(),
+          Provider[e.target.dataset.provider]
+        );
       }
     });
   }

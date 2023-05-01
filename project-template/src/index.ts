@@ -1,8 +1,13 @@
 import { renderSearchFormBlock, callback, collectSearchParams, search } from './search-form.js'
 import { renderSearchStubBlock } from './search-results.js'
 import { renderUserBlock, getUserData, getFavoritesAmount } from './user.js'
-import { renderToast } from './lib.js'
+import { renderToast, replacer, reviver } from "./lib.js";
 
+import {
+  FlatRentSdk,
+  FlatRentFlat,
+  FlatRentParameters,
+} from "./libraries/flat-rent-sdk/flat-rent-sdk.js";
 
 window.addEventListener('DOMContentLoaded', () => {
   renderUserBlock(getUserData(), getFavoritesAmount())
