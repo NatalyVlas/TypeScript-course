@@ -1,5 +1,5 @@
-import { placesCoordinates, renderBlock, renderToast } from "./lib.js";
-import { renderSearchResultsBlock } from "./search-results.js";
+import { placesCoordinates, renderBlock, renderToast } from './lib.js';
+import { renderSearchResultsBlock } from './search-results.js';
 
 export interface SearchFormData {
   city: string;
@@ -26,7 +26,7 @@ export const callback: PlaceCallback = (error, result) => {
   if (error === null && result !== null) {
     renderSearchResultsBlock(result);
   } else {
-    renderToast({ type: "error", text: "Повторите поиск" });
+    renderToast({ type: 'error', text: 'Повторите поиск' });
   }
 };
 
@@ -41,9 +41,9 @@ export async function search(
       searchParams.endDate
     }&maxPrice=${+searchParams.maxPrice}`,
     {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json;charset=utf-8",
+        'Content-Type': 'application/json;charset=utf-8',
       },
     }
   );
@@ -54,9 +54,9 @@ export async function search(
       callback(null, d);
       setTimeout(() => {
         renderToast(
-          { text: "Поиск устарел. Повторите поиск", type: "error" },
+          { text: 'Поиск устарел. Повторите поиск', type: 'error' },
           {
-            name: "Повторить поиск",
+            name: 'Повторить поиск',
             handler: () => {
               search(collectSearchParams(), callback);
             },
@@ -64,21 +64,21 @@ export async function search(
         );
       }, 20000);
     } else {
-      callback(new Error("My Error"));
+      callback(new Error('My Error'));
     }
   }, 500);
 }
 
 export function collectSearchParams(): SearchFormData {
   return {
-    city: (document.getElementById("city") as HTMLTextAreaElement).value,
+    city: (document.getElementById('city') as HTMLTextAreaElement).value,
     startDate: +new Date(
-      (document.getElementById("check-in-date") as HTMLTextAreaElement).value
+      (document.getElementById('check-in-date') as HTMLTextAreaElement).value
     ),
     endDate: +new Date(
-      (document.getElementById("check-out-date") as HTMLTextAreaElement).value
+      (document.getElementById('check-out-date') as HTMLTextAreaElement).value
     ),
-    maxPrice: +(document.getElementById("max-price") as HTMLTextAreaElement)
+    maxPrice: +(document.getElementById('max-price') as HTMLTextAreaElement)
       .value,
   };
 }
