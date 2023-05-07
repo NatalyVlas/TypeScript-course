@@ -8,18 +8,21 @@ interface toastAction {
   handler: () => void;
 }
 
-
 export const placesCoordinates = new Map<string, string>();
 
-placesCoordinates.set("Санкт-Петербург", "59.9386,30.3141");
+placesCoordinates.set('Санкт-Петербург', '59.9386,30.3141');
 
 export function renderBlock(elementId: string, html: string) {
-  const element = document.getElementById(elementId)
-  element.innerHTML = html
+  const element = document.getElementById(elementId);
+  if (element instanceof HTMLElement) {
+    element.innerHTML = html;
+  } else {
+    console.log('lib.ts: element is not HTMElement');
+  }
 }
 
-export function renderToast(message: toastMessage, action?: toastAction): void {
-  let messageText = ''
+export function renderToast(message: toastMessage | null, action?: toastAction): void {
+  let messageText = '';
 
   if (message != null) {
     messageText = `
@@ -27,21 +30,49 @@ export function renderToast(message: toastMessage, action?: toastAction): void {
         <p>${message.text}</p>
         <button id="toast-main-action">${action?.name || 'Закрыть'}</button>
       </div>
-    `
+    `;
   }
 
-  renderBlock(
-    'toast-block',
-    messageText
-  )
+  renderBlock('toast-block', messageText);
 
-  const button = document.getElementById('toast-main-action')
+  const button = document.getElementById('toast-main-action');
   if (button != null) {
     button.onclick = function () {
       if (action != null && action.handler != null) {
-        action.handler()
+        action.handler();
       }
-      renderToast(null)
+      renderToast(null);
+    };
+  }
+}
+
+interface JSONreplacer {
+  dataType: string;
+  value: [any, any][];
+}
+
+export function replacer<V>(value: V): JSONreplacer | V {
+  if (value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries())
+    };
+  } else {
+    return value;
+  }
+}
+
+export function reviver(value: any) {
+  if (typeof value === 'object' && value !== null) {
+    if (value.dataType === 'Map') {
+      return new Map(value.value);
     }
   }
+  return value;
+}
+
+export enum sortType {
+  cheap = 'cheap',
+  expensive = 'expensive',
+  close = 'close',
 }

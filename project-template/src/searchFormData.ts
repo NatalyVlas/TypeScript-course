@@ -5,5 +5,5 @@ export interface SearchFormData {
 }
 
 export function search(SearchFormData): void {
-    console.log()
+  console.log()
 }
